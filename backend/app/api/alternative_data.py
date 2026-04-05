@@ -47,6 +47,43 @@ async def import_alternative_data(
                 item["stock_code"] = stock_code
                 items.append(item)
 
+        elif filename.endswith(".xlsx") or filename.endswith(".xls"):
+            import pandas as pd
+            # 重新定位文件流并使用 pandas 读取 (UploadFile.file 是分段读取的，某些引擎需要seek(0))
+            await file.seek(0)
+            df = pd.read_excel(io.BytesIO(await file.read()))
+            
+            # 列名自动映射逻辑
+            mapping = {
+                "证据时间": "date",
+                "发布时间": "date",
+                "时间": "date",
+                "来源文章": "title",
+                "标题": "title",
+                "证据文本": "content",
+                "内容摘要": "content",
+                "正文": "content",
+                "内容": "content",
+                "来源站点": "source",
+                "来源渠道": "source",
+                "证据类型": "category",
+                "分类": "category"
+            }
+            
+            for _, row in df.iterrows():
+                # 优先寻找映射列，若无则尝试原列名
+                get_val = lambda target, default: row.get(next((k for k, v in mapping.items() if v == target and k in df.columns), target), default)
+                
+                items.append({
+                    "stock_code": stock_code,
+                    "date": str(get_val("date", "")),
+                    "title": str(get_val("title", "")),
+                    "content": str(get_val("content", "")),
+                    "source": str(get_val("source", "导入")),
+                    "category": str(get_val("category", "新闻")),
+                    "impact_level": None, # Excel 暂时不处理影响等级，后续由模型分析
+                })
+
         elif filename.endswith(".csv"):
             reader = csv.DictReader(io.StringIO(text))
             for row in reader:
@@ -60,7 +97,7 @@ async def import_alternative_data(
                     "impact_level": row.get("impact_level"),
                 })
         else:
-            raise HTTPException(status_code=400, detail="仅支持 CSV 和 JSON 格式文件")
+            raise HTTPException(status_code=400, detail="仅支持 CSV, XLSX 和 JSON 格式文件")
 
         if not items:
             raise HTTPException(status_code=400, detail="文件中未找到有效数据")
