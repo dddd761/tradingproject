@@ -1,0 +1,192 @@
+[
+  {
+    "id": "fffd3a1c",
+    "stock_code": "000001",
+    "date": "202403-02-01",
+    "title": "PingAn Bank Profit Up 20 Percent year on year",
+    "content": "The bank reported a significant increase in profit due to growth in retail banking and lower credit costs. Analysts remain optimistic about the stock performance in 2024.",
+    "source": "手动添加FinancialTimes",
+    "category": "新闻",
+    "impact_level": 344
+  },
+  {
+    "id": "6a83152b",
+    "stock_code": "000001",
+    "date": "202403-02-01",
+    "title": "HUGE PROFIT GROWTH BULLISH 000001",
+    "content": "Ping An Bank net profit grew by 200 percent. Extremely bullish sentiment. Market expectations exceeded. High buy recommendation. growth profit gain bullish increase positive success.",
+    "source": "Reuters",
+    "category": "新闻",
+    "impact_level": 5
+  },
+  {
+    "id": "5b1488bd",
+    "stock_code": "000001",
+    "date": "202403-02-01",
+    "title": "Ping An Bank Bullish profit growth buy bullish positive increase",
+    "content": "Significant increase in profit. Strong buy recommendation. Bullish market outlook. Growth in all sectors. Profit surged. Positive momentum. Success in retail banking. Gain in market share. Excellent results. Buy. Bullish. Positive. Increase. Growth. Gain. Profit. Success. Excellent. Best. Strong. Recommendation. Target price raised. Overweight. Outperform. Top pick. Blue chip. Quality asset. Stability. High yield. Dividend growth. Long term value. Growth story. Rebound. Recovery. Expansion. Strategic transformation. Digital innovation. Customer growth. Low risk. Safety margin. Undervalued. Cheap. Bargain. Opportunity. Accumulate. Hodl. Moon. Rocket. Profit. profit. profit. Bullish. bullish. bullish.",
+    "source": "手动添加Manual",
+    "category": "新闻",
+    "impact_level": 35
+  },
+  {
+    "date": "2024-01-05",
+    "title": "平安银行2023年业绩快报：净利润增长5.2%",
+    "content": "平安银行发布2023年度业绩快报，实现营收1646亿元，净利润增长5.2%，超市场预期。不良贷款率下降至1.06%，资产质量持续改善。",
+    "source": "公司公告",
+    "category": "公告",
+    "impact_level": 4,
+    "stock_code": "000001",
+    "id": "b47b6e51"
+  },
+  {
+    "date": "2024-01-15",
+    "title": "央行宣布降准0.5个百分点释放流动性",
+    "content": "中国人民银行宣布自2024年2月5日起下调金融机构存款准备金率0.5个百分点，释放长期流动性约1万亿元。降息政策利好银行业，预计将改善银行净息差。",
+    "source": "央行官网",
+    "category": "政策",
+    "impact_level": 5,
+    "stock_code": "000001",
+    "id": "db7ac844"
+  },
+  {
+    "date": "2024-02-20",
+    "title": "平安银行获监管批准发行500亿元金融债",
+    "content": "银保监会批准平安银行发行不超过500亿元金融债券，用于支持中小企业贷款和绿色金融业务。此举将增强银行资本实力和业务扩展能力。",
+    "source": "新浪财经",
+    "category": "新闻",
+    "impact_level": 3,
+    "stock_code": "000001",
+    "id": "207572aa"
+  },
+  {
+    "date": "2024-03-10",
+    "title": "平安银行零售业务转型成效显著",
+    "content": "平安银行零售客户数突破1.2亿户，零售AUM达4.2万亿元，同比增长15%。数字化转型持续推进，线上渠道交易占比超过98%。分析师普遍看好零售业务增长前景。",
+    "source": "证券时报",
+    "category": "新闻",
+    "impact_level": 4,
+    "stock_code": "000001",
+    "id": "c20726bf"
+  },
+  {
+    "date": "2024-03-28",
+    "title": "房地产风险拖累银行资产质量担忧加剧",
+    "content": "多家房地产企业出现债务违约，银行业房地产贷款不良率上升。市场担忧银行业整体资产质量恶化，部分银行股遭到抛售。利空银行板块。",
+    "source": "财联社",
+    "category": "新闻",
+    "impact_level": 4,
+    "stock_code": "000001",
+    "id": "30ad13ad"
+  },
+  {
+    "date": "2024-04-15",
+    "title": "一季度GDP增长5.3%超预期 经济复苏利好金融板块",
+    "content": "国家统计局公布一季度GDP同比增长5.3%，好于市场预期。经济复苏势头良好，信贷需求回暖，利好银行业绩改善。多家券商上调银行股评级。",
+    "source": "新华社",
+    "category": "政策",
+    "impact_level": 5,
+    "stock_code": "000001",
+    "id": "53d67d4b"
+  },
+  {
+    "date": "2024-05-08",
+    "title": "平安银行完成高管换届 新管理层聚焦科技赋能",
+    "content": "平安银行完成新一届董事会换届选举，新任管理层明确提出以科技赋能金融为核心战略，加大在人工智能和大数据领域的投入。市场反应积极。",
+    "source": "上海证券报",
+    "category": "公告",
+    "impact_level": 3,
+    "stock_code": "000001",
+    "id": "83c8cc51"
+  },
+  {
+    "date": "2024-06-01",
+    "title": "LPR再次下调 银行净息差承压",
+    "content": "央行公布6月LPR报价，1年期LPR下调10个基点至3.35%，5年期以上LPR下调10个基点。虽然降息有利于刺激信贷需求，但银行净息差将进一步收窄，对银行利润构成压力。",
+    "source": "央行官网",
+    "category": "政策",
+    "impact_level": 4,
+    "stock_code": "000001",
+    "id": "ad38dcb6"
+  },
+  {
+    "date": "2024-07-12",
+    "title": "平安银行中报预告：上半年净利润下滑8.5%",
+    "content": "平安银行发布半年度业绩预告，预计上半年净利润同比下滑8.5%左右，主要受净息差收窄和信用成本上升影响。业绩不及预期，市场情绪转向谨慎。",
+    "source": "公司公告",
+    "category": "公告",
+    "impact_level": 5,
+    "stock_code": "000001",
+    "id": "058daf6e"
+  },
+  {
+    "date": "2024-08-20",
+    "title": "国务院出台金融支持实体经济新政策",
+    "content": "国务院常务会议部署金融支持实体经济一揽子措施，包括扩大中小企业贷款规模、降低融资成本、优化金融服务流程等。利好银行信贷业务增长。",
+    "source": "国务院",
+    "category": "政策",
+    "impact_level": 4,
+    "stock_code": "000001",
+    "id": "6515fb6d"
+  },
+  {
+    "date": "2024-09-15",
+    "title": "平安银行推出智能投顾产品 加速财富管理布局",
+    "content": "平安银行正式推出AI驱动的智能投顾服务，依托平安集团的技术优势，为客户提供个性化资产配置方案。产品上线首月即吸引超50万用户注册。",
+    "source": "科技日报",
+    "category": "新闻",
+    "impact_level": 3,
+    "stock_code": "000001",
+    "id": "8d432d58"
+  },
+  {
+    "date": "2024-10-08",
+    "title": "A股迎来强势反弹 银行板块领涨",
+    "content": "受政策利好刺激，A股市场迎来强势反弹。银行板块集体涨停，平安银行涨幅居前。市场情绪大幅回暖，成交量创历史新高。多条利好政策共振推动行情上涨。",
+    "source": "东方财富网",
+    "category": "新闻",
+    "impact_level": 5,
+    "stock_code": "000001",
+    "id": "53828657"
+  },
+  {
+    "date": "2024-10-10",
+    "title": "财政部宣布增发1万亿国债支持经济",
+    "content": "财政部宣布增发1万亿元特别国债用于基础设施建设和民生保障。大规模财政刺激计划提振市场信心，银行业作为资金中介将直接受益。",
+    "source": "财政部",
+    "category": "政策",
+    "impact_level": 5,
+    "stock_code": "000001",
+    "id": "77997668"
+  },
+  {
+    "date": "2024-10-12",
+    "title": "多家外资机构上调中国银行股评级",
+    "content": "摩根士丹利、高盛等多家外资机构集体上调中国银行股评级。平安银行被多家机构推荐为首选标的，目标价上调至15元。外资持续流入银行板块。",
+    "source": "路透社",
+    "category": "新闻",
+    "impact_level": 4,
+    "stock_code": "000001",
+    "id": "fecfe9fd"
+  },
+  {
+    "date": "2024-11-15",
+    "title": "平安银行三季报：营收同比下降2.1% 但拨备覆盖率提升",
+    "content": "平安银行公布三季度报告，前三季度营收同比下降2.1%，但拨备覆盖率提升至285%，资产质量改善明显。市场对银行风险抵御能力给予正面评价。",
+    "source": "公司公告",
+    "category": "公告",
+    "impact_level": 3,
+    "stock_code": "000001",
+    "id": "cd11f9a8"
+  },
+  {
+    "date": "2024-12-10",
+    "title": "中央经济工作会议定调明年货币政策适度宽松",
+    "content": "中央经济工作会议提出明年将实施更加积极的财政政策和适度宽松的货币政策。这是时隔多年再次使用'适度宽松'表述，市场预期明年将有更多降息降准空间。利好银行业信贷扩张。",
+    "source": "新华社",
+    "category": "政策",
+    "impact_level": 5,
+    "stock_code": "000001",
+    "id": "dcacb62d"
+  }
+]

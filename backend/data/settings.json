@@ -1,0 +1,29 @@
+{
+  "model_weights": {
+    "finbert": 0.4,
+    "arima": 0.2,
+    "garch": 0.2,
+    "lstm": 0.2
+  },
+  "decay_alpha": 0.3,
+  "resonance_beta": 0.5,
+  "trade": {
+    "buy_threshold": 0.3,
+    "sell_threshold": -0.3,
+    "daily_position_ratio": 0.1,
+    "initial_capital": 1000000,
+    "commission_rate": 0.0003,
+    "slippage": 0.001
+  },
+  "cleaning": {
+    "dedup_similarity_threshold": 0.85,
+    "relevance_min_score": 0.5,
+    "min_content_length": 10
+  },
+  "llm": {
+    "provider": "none",
+    "api_key": "",
+    "model_name": "",
+    "base_url": ""
+  }
+}
