@@ -30,6 +30,7 @@ class BacktestRequest(BaseModel):
     stock_code: str = Field(..., description="股票代码")
     start_date: str = Field(..., description="开始日期 YYYY-MM-DD")
     end_date: str = Field(..., description="结束日期 YYYY-MM-DD")
+    alternative_data: Optional[list[AlternativeDataItem]] = Field(default=None, description="可选的另类数据，由前端直接传输实现隐私隔离")
 
 
 class KlineDataPoint(BaseModel):

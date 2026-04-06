@@ -24,9 +24,19 @@ export default function BacktestPage() {
     setError('')
     setResult(null)
     try {
-      const response = await backtestApi.run(stockCode, startDate, endDate)
+      // --- 隐私增强：从手机本地取出上传的另类数据 ---
+      const localKey = `local_alt_data_${stockCode}`
+      const localDataStr = localStorage.getItem(localKey)
+      const localData = localDataStr ? JSON.parse(localDataStr) : undefined
+      
+      if (localData && localData.length > 0) {
+        console.log(`🚀 发送 ${localData.length} 条本地隐私数据进行回测`)
+      }
+
+      const response = await backtestApi.run(stockCode, startDate, endDate, localData)
       setResult(response.data)
-      // NOTE: 保存结果到localStorage供分析详情页读取
+      
+      // 保存结果到localStorage供分析详情页读取
       try { localStorage.setItem('latest_backtest_result', JSON.stringify(response.data)) } catch { /* 忽略存储限制 */ }
     } catch (err) {
       setError(err instanceof Error ? err.message : '回测失败')

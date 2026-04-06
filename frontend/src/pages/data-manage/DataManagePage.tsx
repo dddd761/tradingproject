@@ -1,14 +1,15 @@
-import { useState, useCallback, useRef } from 'react'
-import { Upload, FileText, Trash2, Plus, Download, Search, Edit3, X, Check } from 'lucide-react'
+import * as XLSX from 'xlsx'
+import { useState, useCallback, useRef, useEffect } from 'react'
+import { Upload, FileText, Trash2, Plus, Download, Search, Edit3, X, Check, Shield } from 'lucide-react'
 import { alternativeDataApi } from '../../services/api'
 import type { AlternativeDataItem } from '../../types'
 
 /**
  * 数据管理页面
- * 支持CSV/JSON导入、数据浏览、编辑和删除
+ * 支持CSV/JSON导入、本地隐私存储、数据浏览、编辑和删除
  */
 export default function DataManagePage() {
-  const [stockCode, setStockCode] = useState('000001')
+  const [stockCode, setStockCode] = useState('301308')
   const [data, setData] = useState<AlternativeDataItem[]>([])
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState({ type: '', text: '' })
@@ -22,12 +23,30 @@ export default function DataManagePage() {
   })
   const fileInputRef = useRef<HTMLInputElement>(null)
 
-  /** 加载数据 */
+  /** 加载数据 (合并云端和本地) */
   const loadData = useCallback(async () => {
     setLoading(true)
     try {
-      const res = await alternativeDataApi.getByStock(stockCode)
-      setData(res.data)
+      // 1. 加载云端公开数据 (选填)
+      let combinedData: AlternativeDataItem[] = []
+      try {
+        const res = await alternativeDataApi.getByStock(stockCode)
+        combinedData = [...res.data]
+      } catch (e) {
+        console.warn("Cloud data unavailable")
+      }
+
+      // 2. 加载本地隐私数据
+      const localKey = `local_alt_data_${stockCode}`
+      const localDataStr = localStorage.getItem(localKey)
+      if (localDataStr) {
+        const localData = JSON.parse(localDataStr) as AlternativeDataItem[]
+        // 标记为本地隐私数据
+        const markedLocal = localData.map(d => ({ ...d, source: `🏠 本地隐私: ${d.source}` }))
+        combinedData = [...markedLocal, ...combinedData]
+      }
+      
+      setData(combinedData)
     } catch (err) {
       setMessage({ type: 'error', text: err instanceof Error ? err.message : '加载失败' })
     } finally {
@@ -35,18 +54,62 @@ export default function DataManagePage() {
     }
   }, [stockCode])
 
-  /** 文件上传 */
+  // 初始加载
+  useEffect(() => {
+    loadData()
+  }, [loadData])
+
+  /** 本地解析 Excel 并存入隐私仓库 */
   const handleFileUpload = useCallback(async (file: File) => {
     const isExcel = file.name.endsWith('.xlsx') || file.name.endsWith('.xls')
-    if (!file.name.endsWith('.csv') && !file.name.endsWith('.json') && !isExcel) {
+    const isJson = file.name.endsWith('.json')
+    const isCsv = file.name.endsWith('.csv')
+
+    if (!isCsv && !isJson && !isExcel) {
       setMessage({ type: 'error', text: '仅支持 CSV, XLSX 和 JSON 格式' })
       return
     }
+
     setLoading(true)
     try {
-      const res = await alternativeDataApi.importFile(stockCode, file)
-      setMessage({ type: 'success', text: res.message })
-      loadData()
+      if (isExcel) {
+        // --- 本地隐私解析逻辑 ---
+        const reader = new FileReader()
+        reader.onload = (e) => {
+          const binaryStr = e.target?.result
+          const workbook = XLSX.read(binaryStr, { type: 'binary' })
+          const sheetName = workbook.SheetNames[0]
+          const sheet = workbook.Sheets[sheetName]
+          const rawData = XLSX.utils.sheet_to_json(sheet) as any[]
+
+          // 映射列名适配你的 A股另类数据 Excel
+          const mappedItems: AlternativeDataItem[] = rawData.map((row, idx) => ({
+            id: `local_${Date.now()}_${idx}`,
+            stock_code: stockCode,
+            date: row['证据时间'] || row['日期'] || row['date'] || '',
+            title: row['来源文章'] || row['标题'] || row['title'] || '无标题',
+            content: row['证据文本'] || row['内容'] || row['content'] || '',
+            source: row['所属案件-案由'] || '本地上传',
+            category: '新闻',
+            impact_level: null
+          }))
+
+          // 存入本地 LocalStorage
+          const localKey = `local_alt_data_${stockCode}`
+          const existingStr = localStorage.getItem(localKey)
+          const existing = existingStr ? JSON.parse(existingStr) : []
+          localStorage.setItem(localKey, JSON.stringify([...mappedItems, ...existing]))
+
+          setMessage({ type: 'success', text: `本地隐私导入成功: ${mappedItems.length} 条` })
+          loadData()
+        }
+        reader.readAsBinaryString(file)
+      } else {
+        // CSV/JSON 继续用云端存储 (或者你也可以改成全本地，这里为了演示保留云端)
+        const res = await alternativeDataApi.importFile(stockCode, file)
+        setMessage({ type: 'success', text: res.message })
+        loadData()
+      }
     } catch (err) {
       setMessage({ type: 'error', text: err instanceof Error ? err.message : '导入失败' })
     } finally {
@@ -166,6 +229,19 @@ export default function DataManagePage() {
           </button>
           <button className="btn btn-secondary" onClick={() => setShowAddForm(!showAddForm)}>
             <Plus size={14} /> 手动添加
+          </button>
+          <button 
+            className="btn btn-secondary" 
+            onClick={() => {
+              if (window.confirm(`确定要清空股票 ${stockCode} 的本地隐私数据吗？这不会影响云端公开数据。`)) {
+                localStorage.removeItem(`local_alt_data_${stockCode}`)
+                loadData()
+                setMessage({ type: 'success', text: '本地隐私数据已清空' })
+              }
+            }}
+            style={{ borderColor: 'rgba(239, 68, 68, 0.4)', color: 'var(--color-bull)' }}
+          >
+            <Trash2 size={14} /> 清空本地
           </button>
           <button className="btn btn-secondary" onClick={handleDownloadTemplate}>
             <Download size={14} /> 下载模板

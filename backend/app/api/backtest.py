@@ -32,8 +32,14 @@ async def execute_backtest(request: BacktestRequest):
                 detail=f"未获取到股票 {request.stock_code} 在指定时间范围内的K线数据",
             )
 
-        # 获取另类数据
-        alternative_data = data_store.load_alternative_data(request.stock_code)
+        # 获取另类数据：优先使用请求中携带的数据（实现手机端隔离），否则从公开仓库加载
+        if request.alternative_data:
+            logger.info(f"Using client-provided alternative data for {request.stock_code}")
+            # 转换为 dict 列表以匹配引擎
+            alternative_data = [item.dict() for item in request.alternative_data]
+        else:
+            logger.info(f"Loading public alternative data from store for {request.stock_code}")
+            alternative_data = data_store.load_alternative_data(request.stock_code)
 
         # 加载设置
         settings = load_settings()

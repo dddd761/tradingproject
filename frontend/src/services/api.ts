@@ -95,13 +95,14 @@ export const alternativeDataApi = {
 
 /** 回测API */
 export const backtestApi = {
-  run: (stockCode: string, startDate: string, endDate: string) =>
+  run: (stockCode: string, startDate: string, endDate: string, alternativeData?: AlternativeDataItem[]) =>
     request<{ code: number; data: BacktestResult }>('/backtest/run', {
       method: 'POST',
       body: JSON.stringify({
         stock_code: stockCode,
         start_date: startDate,
         end_date: endDate,
+        alternative_data: alternativeData,
       }),
     }),
 }
