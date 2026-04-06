@@ -132,14 +132,28 @@ export default function DataManagePage() {
     if (e.dataTransfer.files?.[0]) handleFileUpload(e.dataTransfer.files[0])
   }, [handleFileUpload])
 
-  /** 删除数据 */
+  /** 删除数据 (支持云端和本地隐私数据) */
   const handleDelete = useCallback(async (itemId: string) => {
     try {
-      await alternativeDataApi.delete(stockCode, itemId)
-      setData(prev => prev.filter(d => d.id !== itemId))
-      setMessage({ type: 'success', text: '删除成功' })
+      if (itemId.startsWith('local_')) {
+        // --- 删除本地隐私数据 ---
+        const localKey = `local_alt_data_${stockCode}`
+        const localDataStr = localStorage.getItem(localKey)
+        if (localDataStr) {
+          const localData = JSON.parse(localDataStr) as AlternativeDataItem[]
+          const filtered = localData.filter(d => d.id !== itemId)
+          localStorage.setItem(localKey, JSON.stringify(filtered))
+          setData(prev => prev.filter(d => d.id !== itemId))
+          setMessage({ type: 'success', text: '本地隐私条目已删除' })
+        }
+      } else {
+        // --- 删除云端公开数据 ---
+        await alternativeDataApi.delete(stockCode, itemId)
+        setData(prev => prev.filter(d => d.id !== itemId))
+        setMessage({ type: 'success', text: '云端公开条目已删除' })
+      }
     } catch (err) {
-      setMessage({ type: 'error', text: '删除失败' })
+      setMessage({ type: 'error', text: '删除失败: ' + (err instanceof Error ? err.message : '未知错误') })
     }
   }, [stockCode])
 
