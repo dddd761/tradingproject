@@ -61,12 +61,13 @@ export default function DataManagePage() {
 
   /** 本地解析 Excel 并存入隐私仓库 */
   const handleFileUpload = useCallback(async (file: File) => {
-    const isExcel = file.name.endsWith('.xlsx') || file.name.endsWith('.xls')
-    const isJson = file.name.endsWith('.json')
-    const isCsv = file.name.endsWith('.csv')
+    const fileNameLower = file.name.toLowerCase()
+    const isExcel = fileNameLower.endsWith('.xlsx') || fileNameLower.endsWith('.xls')
+    const isJson = fileNameLower.endsWith('.json')
+    const isCsv = fileNameLower.endsWith('.csv')
 
     if (!isCsv && !isJson && !isExcel) {
-      setMessage({ type: 'error', text: '仅支持 CSV, XLSX 和 JSON 格式' })
+      setMessage({ type: 'error', text: '仅支持 CSV, XLSX 和 JSON 格文件' })
       return
     }
 
