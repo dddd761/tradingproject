@@ -45,7 +45,7 @@ export default function DataManagePage() {
         const markedLocal = localData.map(d => ({ ...d, source: `🏠 本地隐私: ${d.source}` }))
         combinedData = [...markedLocal, ...combinedData]
       }
-      
+
       setData(combinedData)
     } catch (err) {
       setMessage({ type: 'error', text: err instanceof Error ? err.message : '加载失败' })
@@ -67,52 +67,83 @@ export default function DataManagePage() {
     const isCsv = fileNameLower.endsWith('.csv')
 
     if (!isCsv && !isJson && !isExcel) {
-      setMessage({ type: 'error', text: '仅支持 CSV, XLSX 和 JSON 格文件' })
+      setMessage({ type: 'error', text: '仅支持 CSV, XLSX 和 JSON 格式文件' })
       return
     }
 
     setLoading(true)
     try {
-      if (isExcel) {
-        // --- 本地隐私解析逻辑 ---
+      if (isExcel || isCsv) {
+        // --- 本地隐私解析逻辑 (Excel/CSV) ---
         const reader = new FileReader()
         reader.onload = (e) => {
-          const binaryStr = e.target?.result
-          const workbook = XLSX.read(binaryStr, { type: 'binary' })
-          const sheetName = workbook.SheetNames[0]
-          const sheet = workbook.Sheets[sheetName]
-          const rawData = XLSX.utils.sheet_to_json(sheet) as any[]
+          try {
+            const binaryStr = e.target?.result
+            const workbook = XLSX.read(binaryStr, { type: 'binary' })
+            const sheetName = workbook.SheetNames[0]
+            const sheet = workbook.Sheets[sheetName]
+            const rawData = XLSX.utils.sheet_to_json(sheet) as any[]
 
-          // 映射列名适配你的 A股另类数据 Excel
-          const mappedItems: AlternativeDataItem[] = rawData.map((row, idx) => ({
-            id: `local_${Date.now()}_${idx}`,
-            stock_code: stockCode,
-            date: row['证据时间'] || row['日期'] || row['date'] || '',
-            title: row['来源文章'] || row['标题'] || row['title'] || '无标题',
-            content: row['证据文本'] || row['内容'] || row['content'] || '',
-            source: row['所属案件-案由'] || '本地上传',
-            category: '新闻',
-            impact_level: null
-          }))
+            // 映射列名适配 A股另类数据 Excel/CSV
+            const mappedItems: AlternativeDataItem[] = rawData.map((row, idx) => ({
+              id: `local_${Date.now()}_${idx}`,
+              stock_code: stockCode,
+              date: row['证据时间'] || row['日期'] || row['date'] || '',
+              title: row['来源文章'] || row['标题'] || row['title'] || '无标题',
+              content: row['证据文本'] || row['内容'] || row['content'] || '',
+              source: row['所属案件-案由'] || row['来源'] || row['source'] || '本地上传',
+              category: row['分类'] || row['category'] || '新闻',
+              impact_level: row['影响等级'] || row['impact_level'] || null
+            }))
 
-          // 存入本地 LocalStorage
-          const localKey = `local_alt_data_${stockCode}`
-          const existingStr = localStorage.getItem(localKey)
-          const existing = existingStr ? JSON.parse(existingStr) : []
-          localStorage.setItem(localKey, JSON.stringify([...mappedItems, ...existing]))
+            // 存入本地 LocalStorage
+            const localKey = `local_alt_data_${stockCode}`
+            const existingStr = localStorage.getItem(localKey)
+            const existing = existingStr ? JSON.parse(existingStr) : []
+            localStorage.setItem(localKey, JSON.stringify([...mappedItems, ...existing]))
 
-          setMessage({ type: 'success', text: `本地隐私导入成功: ${mappedItems.length} 条` })
-          loadData()
+            setMessage({ type: 'success', text: `本地隐私导入成功: ${mappedItems.length} 条` })
+            loadData()
+          } catch (err) {
+            setMessage({ type: 'error', text: '文件解析失败' })
+          }
         }
         reader.readAsBinaryString(file)
-      } else {
-        // CSV/JSON 继续用云端存储 (或者你也可以改成全本地，这里为了演示保留云端)
-        const res = await alternativeDataApi.importFile(stockCode, file)
-        setMessage({ type: 'success', text: res.message })
-        loadData()
+      } else if (isJson) {
+        // --- 本地隐私解析逻辑 (JSON) ---
+        const reader = new FileReader()
+        reader.onload = (e) => {
+          try {
+            const textStr = e.target?.result as string
+            const rawData = JSON.parse(textStr)
+            const items = Array.isArray(rawData) ? rawData : (rawData.items || [])
+            const mappedItems: AlternativeDataItem[] = items.map((row: any, idx: number) => ({
+              id: `local_${Date.now()}_${idx}`,
+              stock_code: stockCode,
+              date: row['date'] || row['日期'] || '',
+              title: row['title'] || row['标题'] || '无标题',
+              content: row['content'] || row['内容'] || '',
+              source: row['source'] || row['来源'] || '本地上传',
+              category: row['category'] || row['分类'] || '新闻',
+              impact_level: row['impact_level'] || row['影响等级'] || null
+            }))
+
+            // 存入本地 LocalStorage
+            const localKey = `local_alt_data_${stockCode}`
+            const existingStr = localStorage.getItem(localKey)
+            const existing = existingStr ? JSON.parse(existingStr) : []
+            localStorage.setItem(localKey, JSON.stringify([...mappedItems, ...existing]))
+
+            setMessage({ type: 'success', text: `本地隐私导入成功: ${mappedItems.length} 条` })
+            loadData()
+          } catch (err) {
+            setMessage({ type: 'error', text: 'JSON文件解析失败' })
+          }
+        }
+        reader.readAsText(file)
       }
     } catch (err) {
-      setMessage({ type: 'error', text: err instanceof Error ? err.message : '导入失败' })
+      setMessage({ type: 'error', text: err instanceof Error ? err.message : '导入设置失败' })
     } finally {
       setLoading(false)
     }
@@ -245,8 +276,8 @@ export default function DataManagePage() {
           <button className="btn btn-secondary" onClick={() => setShowAddForm(!showAddForm)}>
             <Plus size={14} /> 手动添加
           </button>
-          <button 
-            className="btn btn-secondary" 
+          <button
+            className="btn btn-secondary"
             onClick={() => {
               if (window.confirm(`确定要清空股票 ${stockCode} 的本地隐私数据吗？这不会影响云端公开数据。`)) {
                 localStorage.removeItem(`local_alt_data_${stockCode}`)
