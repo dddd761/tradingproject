@@ -37,8 +37,9 @@ export default function DataManagePage() {
 
   /** 文件上传 */
   const handleFileUpload = useCallback(async (file: File) => {
-    if (!file.name.endsWith('.csv') && !file.name.endsWith('.json')) {
-      setMessage({ type: 'error', text: '仅支持 CSV 和 JSON 格式' })
+    const isExcel = file.name.endsWith('.xlsx') || file.name.endsWith('.xls')
+    if (!file.name.endsWith('.csv') && !file.name.endsWith('.json') && !isExcel) {
+      setMessage({ type: 'error', text: '仅支持 CSV, XLSX 和 JSON 格式' })
       return
     }
     setLoading(true)
@@ -232,21 +233,22 @@ export default function DataManagePage() {
           >
             <div className="upload-zone-icon">📁</div>
             <div className="upload-zone-text">拖拽文件到此处或点击选择</div>
-            <div className="upload-zone-hint">支持 CSV 和 JSON 格式</div>
+            <div className="upload-zone-hint">支持 CSV, XLSX 和 JSON 格式</div>
             <input
               ref={fileInputRef}
               type="file"
-              accept=".csv,.json"
+              accept=".csv,.json,.xlsx,.xls"
               style={{ display: 'none' }}
               onChange={(e) => e.target.files?.[0] && handleFileUpload(e.target.files[0])}
             />
           </div>
           <div style={{ marginTop: 'var(--space-lg)', fontSize: '12px', color: 'var(--color-text-muted)' }}>
-            <strong>CSV格式要求：</strong>
-            <br />列名: date, title, content, source, category, impact_level
+            <strong>支持格式：</strong>
+            <br />• <strong>CSV/Excel</strong>: 需包含日期、标题、正文等列
+            <br />• <strong>JSON</strong>: 数组或 {'{'}"items": [...]{'}'} 格式
             <br /><br />
-            <strong>JSON格式要求：</strong>
-            <br />数组或 {'{'}"items": [...]{'}'} 格式
+            <strong>特别适配：</strong>
+            <br />已支持“证据时间、来源文章、证据文本”等导出格式
           </div>
         </div>
 
