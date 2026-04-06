@@ -35,8 +35,8 @@ DEFAULT_SETTINGS = {
     "resonance_beta": 0.5,
     # 交易参数
     "trade": {
-        "buy_threshold": 0.3,
-        "sell_threshold": -0.3,
+        "buy_threshold": 0.15,
+        "sell_threshold": -0.15,
         "daily_position_ratio": 0.1,
         "initial_capital": 1000000,
         "commission_rate": 0.0003,

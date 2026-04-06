@@ -24,23 +24,7 @@ def compute_daily_sentiment(
     settings: Optional[dict] = None,
 ) -> dict:
     """
-    计算日期范围内每天的综合情绪分数
-
-    流程:
-    1. 清洗数据
-    2. 对每条新闻用FinBERT打基础分
-    3. 计算对数衰减
-    4. 检测共振效应
-    5. ARIMA趋势预测
-    6. GARCH波动率调整
-    7. LSTM综合（预留）
-    8. 加权融合得到最终分数
-
-    @param alternative_data: 另类数据列表
-    @param stock_code: 目标股票代码
-    @param date_range: 日期列表 ["YYYY-MM-DD", ...]
-    @param settings: 系统参数配置
-    @returns 包含每日分数和分析详情的字典
+    计算日期范围内每天的综合情绪分数（修正版：含模糊匹配逻辑）
     """
     if settings is None:
         settings = load_settings()
@@ -53,7 +37,7 @@ def compute_daily_sentiment(
     cleaning_result = clean_alternative_data(alternative_data, stock_code, settings)
     cleaned_data = cleaning_result["cleaned_data"]
 
-    # Step 2: FinBERT 基础打分（当前使用规则引擎替代）
+    # Step 2: 基础打分
     scored_news = []
     for item in cleaned_data:
         raw_score = _rule_based_sentiment(item)
@@ -63,36 +47,37 @@ def compute_daily_sentiment(
             "finbert_score": raw_score,
         })
 
-    # Step 3 & 4: 计算每日情绪分数（含衰减和共振）
     daily_scores = []
     scoring_details = []
-    historical_scores = []  # 用于ARIMA/GARCH
+    historical_scores = [] 
 
     for target_date in date_range:
-        target_dt = datetime.strptime(target_date, "%Y-%m-%d")
+        # 统一标准化目标日期格式为 YYYY-MM-DD
+        target_date_std = str(target_date).replace("/", "-").split(" ")[0]
+        try:
+            target_dt = datetime.strptime(target_date_std, "%Y-%m-%d")
+        except ValueError:
+            continue
 
-        # 收集对当天有影响的所有新闻（发生在当天或之前）
         contributing_news = []
         positive_count = 0
         negative_count = 0
 
         for news in scored_news:
             news_date = news.get("date", "")
+            if not news_date: continue
+            
+            # 标准化新闻日期
+            news_date_std = str(news_date).replace("/", "-").split(" ")[0]
             try:
-                news_dt = datetime.strptime(news_date, "%Y-%m-%d")
+                news_dt = datetime.strptime(news_date_std, "%Y-%m-%d")
             except ValueError:
                 continue
 
-            # 只考虑当天及之前的新闻
             delta_days = (target_dt - news_dt).days
-            if delta_days < 0:
+            if delta_days < 0 or delta_days > 30:
                 continue
 
-            # 超过30天的新闻影响忽略不计
-            if delta_days > 30:
-                continue
-
-            # 对数衰减: score(t) = score_0 * max(0, 1 - α * ln(1 + t))
             raw = news["raw_sentiment"]
             decay_factor = max(0, 1 - alpha * math.log(1 + delta_days))
             decayed_score = raw * decay_factor
@@ -112,12 +97,10 @@ def compute_daily_sentiment(
                 "decay_factor": round(decay_factor, 4),
             })
 
-        # 共振效应计算
-        # 同方向新闻数量 > 1 时产生共振放大
+        # 共振效应
         pos_resonance = 1 + beta * math.log(max(1, positive_count)) if positive_count > 1 else 1.0
         neg_resonance = 1 + beta * math.log(max(1, negative_count)) if negative_count > 1 else 1.0
 
-        # 汇总FinBERT分数
         finbert_total = 0.0
         for cn in contributing_news:
             ds = cn["decayed_score"]
@@ -126,50 +109,28 @@ def compute_daily_sentiment(
             elif ds < 0:
                 finbert_total += ds * neg_resonance
 
-        # 归一化到 [-1, 1]
         finbert_score = max(-1, min(1, finbert_total))
-
-        # ARIMA 趋势分数（基于历史情绪分数的趋势外推）
         arima_score = _simple_arima_score(historical_scores)
-
-        # GARCH 波动率调整（高波动时降低置信度）
         garch_adj = _simple_garch_adjustment(historical_scores)
+        lstm_score = finbert_score * 0.8
 
-        # LSTM 分数（预留，当前使用FinBERT分数权重替代）
-        lstm_score = finbert_score * 0.8  # 简化版：跟随FinBERT方向但弱化
-
-        # 加权融合
         w_finbert = weights.get("finbert", 0.4)
         w_arima = weights.get("arima", 0.2)
-        w_garch = weights.get("garch", 0.2)
         w_lstm = weights.get("lstm", 0.2)
 
-        # GARCH调整系数应用于总分
-        raw_composite = (
-            w_finbert * finbert_score
-            + w_arima * arima_score
-            + w_lstm * lstm_score
-        )
-        # GARCH调整：波动率高时压缩信号强度
-        composite_score = raw_composite * garch_adj
-        composite_score = max(-1, min(1, composite_score))
-
-        resonance_factor = max(pos_resonance, neg_resonance)
+        raw_composite = (w_finbert * finbert_score + w_arima * arima_score + w_lstm * lstm_score)
+        composite_score = max(-1, min(1, raw_composite * garch_adj))
 
         daily_scores.append({
             "date": target_date,
             "score": round(composite_score, 4),
             "finbert_score": round(finbert_score, 4),
-            "arima_score": round(arima_score, 4),
-            "garch_adjustment": round(garch_adj, 4),
-            "lstm_score": round(lstm_score, 4),
-            "contributing_news": contributing_news,
-            "resonance_factor": round(resonance_factor, 4),
+            "resonance_factor": round(max(pos_resonance, neg_resonance), 4),
+            "contributing_news": contributing_news
         })
-
         historical_scores.append(composite_score)
 
-        # 打分详情
+        # 详情记录
         for cn in contributing_news:
             scoring_details.append({
                 "news_id": cn["id"],
@@ -177,8 +138,7 @@ def compute_daily_sentiment(
                 "date": cn["date"],
                 "target_date": target_date,
                 "raw_score": cn["raw_score"],
-                "decayed_score": cn["decayed_score"],
-                "decay_days": cn["decay_days"],
+                "decayed_score": cn["decayed_score"]
             })
 
     return {
@@ -199,22 +159,20 @@ def _rule_based_sentiment(news: dict) -> float:
 
     # 看涨关键词和权重
     positive_keywords = {
-        "利好": 0.6, "上涨": 0.5, "增长": 0.4, "突破": 0.5, "大涨": 0.7,
-        "涨停": 0.8, "创新高": 0.6, "业绩增长": 0.6, "超预期": 0.7,
-        "政策支持": 0.5, "降息": 0.4, "减税": 0.4, "刺激": 0.3,
-        "订单": 0.3, "中标": 0.5, "合作": 0.3, "投资": 0.2,
-        "回购": 0.4, "增持": 0.5, "分红": 0.3, "盈利": 0.4,
-        "扭亏为盈": 0.7, "净利润增长": 0.6, "营收增长": 0.5,
+        "利好": 0.7, "上涨": 0.5, "增长": 0.5, "突破": 0.6, "大涨": 0.8,
+        "涨停": 0.9, "创新高": 0.7, "业绩增长": 0.7, "超预期": 0.8,
+        "政策支持": 0.6, "亿": 0.4, "投资": 0.4, "扩产": 0.5, "密集": 0.3,
+        "第一": 0.5, "领先": 0.4, "低估": 0.5, "爆发": 0.6,
+        "订单": 0.5, "中标": 0.6, "合作": 0.4, "回购": 0.5,
+        "增持": 0.6, "净利润增长": 0.7, "营收增长": 0.6,
     }
 
     # 看跌关键词和权重
     negative_keywords = {
-        "利空": -0.6, "下跌": -0.5, "下滑": -0.4, "暴跌": -0.7,
-        "跌停": -0.8, "创新低": -0.6, "业绩下滑": -0.6, "不及预期": -0.7,
-        "监管处罚": -0.6, "加息": -0.4, "增税": -0.4, "收缩": -0.3,
-        "亏损": -0.5, "减持": -0.5, "退市": -0.8, "ST": -0.7,
-        "违规": -0.6, "诉讼": -0.4, "罚款": -0.5, "负债": -0.3,
-        "净利润下降": -0.6, "营收下降": -0.5, "风险": -0.3,
+        "利空": -0.7, "下跌": -0.6, "下滑": -0.5, "暴跌": -0.8,
+        "跌停": -0.9, "创新低": -0.7, "业绩下滑": -0.7, "不及预期": -0.8,
+        "监管处罚": -0.7, "亏损": -0.6, "减持": -0.6, "风险": -0.4,
+        "诉讼": -0.5, "爆雷": -0.9, "黑天鹅": -0.8,
     }
 
     score = 0.0
