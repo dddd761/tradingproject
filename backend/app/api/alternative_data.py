@@ -35,11 +35,11 @@ async def import_alternative_data(
     """
     try:
         content = await file.read()
-        text = content.decode("utf-8-sig")  # 处理BOM
         filename = file.filename or "unknown"
 
         items = []
         if filename.endswith(".json"):
+            text = content.decode("utf-8-sig")
             raw_items = json.loads(text)
             if isinstance(raw_items, dict):
                 raw_items = raw_items.get("items", raw_items.get("data", [raw_items]))
@@ -49,25 +49,16 @@ async def import_alternative_data(
 
         elif filename.endswith(".xlsx") or filename.endswith(".xls"):
             import pandas as pd
-            # 重新定位文件流并使用 pandas 读取 (UploadFile.file 是分段读取的，某些引擎需要seek(0))
-            await file.seek(0)
-            df = pd.read_excel(io.BytesIO(await file.read()))
+            # 使用内存中的 bytes 字节流读取，性能更高且不会因流读取位置而出错
+            df = pd.read_excel(io.BytesIO(content))
             
             # 列名自动映射逻辑
             mapping = {
-                "证据时间": "date",
-                "发布时间": "date",
-                "时间": "date",
-                "来源文章": "title",
-                "标题": "title",
-                "证据文本": "content",
-                "内容摘要": "content",
-                "正文": "content",
-                "内容": "content",
-                "来源站点": "source",
-                "来源渠道": "source",
-                "证据类型": "category",
-                "分类": "category"
+                "证据时间": "date", "发布时间": "date", "时间": "date",
+                "来源文章": "title", "标题": "title",
+                "证据文本": "content", "内容摘要": "content", "正文": "content", "内容": "content",
+                "来源站点": "source", "来源渠道": "source",
+                "证据类型": "category", "分类": "category"
             }
             
             for _, row in df.iterrows():
@@ -81,10 +72,11 @@ async def import_alternative_data(
                     "content": str(get_val("content", "")),
                     "source": str(get_val("source", "导入")),
                     "category": str(get_val("category", "新闻")),
-                    "impact_level": None, # Excel 暂时不处理影响等级，后续由模型分析
+                    "impact_level": None,
                 })
 
         elif filename.endswith(".csv"):
+            text = content.decode("utf-8-sig")
             reader = csv.DictReader(io.StringIO(text))
             for row in reader:
                 items.append({
