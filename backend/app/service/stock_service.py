@@ -33,42 +33,50 @@ def get_kline_data(stock_code: str, start_date: str, end_date: str) -> list[dict
         logger.info(f"Loaded kline cache for {stock_code}")
         return cached
 
-    try:
-        # NOTE: akshare的股票日K线接口
-        # symbol格式需要根据交易所添加前缀
-        symbol = _format_symbol(stock_code)
-        df = ak.stock_zh_a_hist(
-            symbol=stock_code,
-            period="daily",
-            start_date=start_fmt,
-            end_date=end_fmt,
-            adjust="qfq",  # 前复权
-        )
+    import time
+    max_retries = 3
+    retry_delay = 2  # 秒
 
-        if df is None or df.empty:
-            logger.warning(f"No kline data found for {stock_code}")
-            return []
+    for attempt in range(max_retries):
+        try:
+            # NOTE: akshare 的股票日K线接口
+            df = ak.stock_zh_a_hist(
+                symbol=stock_code,
+                period="daily",
+                start_date=start_fmt,
+                end_date=end_fmt,
+                adjust="qfq",  # 前复权
+            )
 
-        # 转换为标准格式
-        kline_list = []
-        for _, row in df.iterrows():
-            kline_list.append({
-                "date": str(row["日期"]),
-                "open": float(row["开盘"]),
-                "high": float(row["最高"]),
-                "low": float(row["最低"]),
-                "close": float(row["收盘"]),
-                "volume": float(row["成交量"]),
-            })
+            if df is not None and not df.empty:
+                # 转换和缓存逻辑保持不变
+                kline_list = []
+                for _, row in df.iterrows():
+                    kline_list.append({
+                        "date": str(row["日期"]),
+                        "open": float(row["开盘"]),
+                        "high": float(row["最高"]),
+                        "low": float(row["最低"]),
+                        "close": float(row["收盘"]),
+                        "volume": float(row["成交量"]),
+                    })
+                data_store.save_kline_cache(stock_code, start_fmt, end_fmt, kline_list)
+                return kline_list
+            
+            if attempt < max_retries - 1:
+                logger.warning(f"Empty data for {stock_code}, retrying {attempt+1}/{max_retries}...")
+                time.sleep(retry_delay)
+                continue
+            else:
+                return []
 
-        # 缓存数据
-        data_store.save_kline_cache(stock_code, start_fmt, end_fmt, kline_list)
-        logger.info(f"Fetched and cached {len(kline_list)} kline records for {stock_code}")
-        return kline_list
-
-    except Exception as e:
-        logger.error(f"Failed to fetch kline data for {stock_code}: {e}")
-        raise ValueError(f"获取股票 {stock_code} K线数据失败: {str(e)}")
+        except Exception as e:
+            if attempt < max_retries - 1:
+                logger.warning(f"Attempt {attempt+1} failed for {stock_code}: {e}. Retrying...")
+                time.sleep(retry_delay)
+            else:
+                logger.error(f"Failed to fetch kline data for {stock_code} after {max_retries} attempts: {e}")
+                raise ValueError(f"获取股票 {stock_code} K线数据失败: {str(e)}")
 
 
 def _format_symbol(stock_code: str) -> str:
